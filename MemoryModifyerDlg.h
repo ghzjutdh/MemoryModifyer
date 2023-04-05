@@ -13,10 +13,14 @@ public:
 	CMemoryModifyerDlg(CWnd* pParent = nullptr);	// 标准构造函数
 	CStatic textfile;
 	CEdit editvalue;
+	CEdit editaddress;
+	CEdit editcontent;
+	CEdit editbytes;
 	CString m_strFileName;
 	CListCtrl m_list;
 	int m_iCurRow;		//鼠标单击的行
 	int m_iCurColunm;	//鼠标单击的列
+	int m_lastCheck;    //记录上次查询的数值v
 
 // 对话框数据
 #ifdef AFX_DESIGN_TIME
@@ -36,12 +40,24 @@ protected:
 	int g_nListCnt; //有效的地址个数
 	HANDLE g_hProcess; //目标进程的句柄
 
-	void OpenExe();
+	// 测试用
+	void ForTest();
+
+	// 功能函数
+	int GetValueBytes(int value); // 获取value的字节数，只能是1，2，4中的一种
+	SIZE_T GetBytesSize(int value); // 获取不同字节数对应的sizeof返回，value只能是1，2，4中的一种
+	int GetValueByLength(int value, int length);
+
+	// 内存修改API
+	BOOL ComparePage(DWORD dwBaseAddr, DWORD dwValue);
 	BOOL FindFirst(DWORD dwValue);
 	BOOL FindNext(DWORD dwValue);
 	BOOL WriteMemory(DWORD dwAddr, DWORD dwValue);
+
+	// 刷新list列表
 	void InitList();
 	void ShowList();
+	void ClearList();
 
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();
@@ -54,4 +70,8 @@ public:
 	afx_msg void OnBnClickedButton2();
 	afx_msg void OnLbnSelchangeList1();
 	afx_msg void OnNMClickList2(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnBnClickedButton3();
+	afx_msg void OnBnClickedButton4();
+	afx_msg void OnBnClickedButton5();
+	afx_msg void OnEnChangeEdit4();
 };
