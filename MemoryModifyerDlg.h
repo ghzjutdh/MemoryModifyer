@@ -12,6 +12,7 @@ class CMemoryModifyerDlg : public CDialogEx
 public:
 	CMemoryModifyerDlg(CWnd* pParent = nullptr);	// 标准构造函数
 	CStatic textfile;
+	CEdit editprocessmem;
 	CEdit editvalue;
 	CEdit editaddress;
 	CEdit editcontent;
@@ -21,6 +22,7 @@ public:
 	int m_iCurRow;		//鼠标单击的行
 	int m_iCurColunm;	//鼠标单击的列
 	int m_lastCheck;    //记录上次查询的数值v
+	unsigned int m_workingSetSize;
 
 // 对话框数据
 #ifdef AFX_DESIGN_TIME
@@ -52,12 +54,12 @@ protected:
 	BOOL ComparePage(DWORD dwBaseAddr, DWORD dwValue);
 	BOOL FindFirst(DWORD dwValue);
 	BOOL FindNext(DWORD dwValue);
-	BOOL WriteMemory(DWORD dwAddr, DWORD dwValue);
 
 	// 刷新list列表
 	void InitList();
 	void ShowList();
 	void ClearList();
+	void UpdateProcesasInfo();
 
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();

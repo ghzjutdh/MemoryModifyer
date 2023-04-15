@@ -3,6 +3,7 @@
 //
 
 #include "pch.h"
+#include "Psapi.h"
 #include "framework.h"
 #include "MemoryModifyer.h"
 #include "MemoryModifyerDlg.h"
@@ -64,6 +65,7 @@ void CMemoryModifyerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_STATIC, textfile);
+	DDX_Control(pDX, IDC_EDIT5, editprocessmem);
 	DDX_Control(pDX, IDC_EDIT1, editvalue);
 	DDX_Control(pDX, IDC_EDIT2, editaddress);
 	DDX_Control(pDX, IDC_EDIT3, editcontent);
@@ -186,8 +188,8 @@ int CMemoryModifyerDlg::GetValueBytes(int value) {
 	byte[2] = value >> 16 % 256;
 	byte[3] = value >> 24 % 256;
 	int length = 4;
-	if (byte[3] != 0 || byte[2] != 0) length = 4;
-	else if (byte[1] != 0) length = 2;
+	if (byte[3] != 0 || byte[2] != 0 || byte[1] != 0) length = 4;
+	//else if (byte[1] != 0) length = 2;
 	else length = 1;
 	return length;
 }
@@ -245,8 +247,9 @@ BOOL CMemoryModifyerDlg::FindFirst(DWORD dwValue)
 	g_nListCnt = 0;
 	if (g_hProcess == NULL)
 		return FALSE;
+
 	DWORD dwBase = 64 * 1024; //刚开始的64kb是不能访问的，直接跳过
-	for (; dwBase < 2 * dwOneGb; dwBase += dwOnePage) {
+	for (; dwBase < dwOneGb; dwBase += dwOnePage) {
 		//在2gb的空间里每次在4kb的页中寻找
 		ComparePage(dwBase, dwValue);
 	}
@@ -272,11 +275,6 @@ BOOL CMemoryModifyerDlg::FindNext(DWORD dwValue)
 		}
 	}
 	return bRet;
-}
-
-BOOL CMemoryModifyerDlg::WriteMemory(DWORD dwAddr, DWORD dwValue)
-{
-	return FALSE;
 }
 
 void CMemoryModifyerDlg::InitList()
@@ -323,6 +321,24 @@ void CMemoryModifyerDlg::ClearList()
 	ShowList();
 }
 
+void CMemoryModifyerDlg::UpdateProcesasInfo()
+{
+	PROCESS_MEMORY_COUNTERS pmc;
+	::GetProcessMemoryInfo(g_hProcess, &pmc, sizeof(pmc));
+	m_workingSetSize = pmc.WorkingSetSize;
+	CString str;
+	if (m_workingSetSize < 1024) {
+		str.Format(_T("进程信息：WorkingSetSize=%dB"), m_workingSetSize);
+	}
+	else if (m_workingSetSize >= 1024 && m_workingSetSize < 1024 * 1024) {
+		str.Format(_T("进程信息：WorkingSetSize=%dKB"), m_workingSetSize / 1024);
+	}
+	else{
+		str.Format(_T("进程信息：WorkingSetSize=%dMB"), m_workingSetSize / 1024 / 1024);
+	}
+	editprocessmem.SetWindowText(str);
+}
+
 void CMemoryModifyerDlg::OnBnClickedButton1()
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -356,6 +372,7 @@ void CMemoryModifyerDlg::OnBnClickedButton1()
 	);
 	g_hProcess = pi.hProcess; //将目标进程的句柄保存在全局变量中
 
+	UpdateProcesasInfo();
 	ClearList();
 }
 
@@ -417,6 +434,15 @@ void CMemoryModifyerDlg::OnBnClickedButton4()
 void CMemoryModifyerDlg::OnBnClickedButton5()
 {
 	// TODO: 在此添加控件通知处理程序代码
+	CString editstr;
+	editaddress.GetWindowText(editstr);
+	DWORD dwAddr = _tcstoul(editstr, NULL, 16);//把字符转成10位整数
+	editcontent.GetWindowText(editstr);
+	DWORD dwValue = _tcstoul(editstr, NULL, 10);//把字符转成10位整数
+	editbytes.GetWindowText(editstr);
+	DWORD dwBytes = _tcstoul(editstr, NULL, 10);//把字符转成10位整数
+
+	::WriteProcessMemory(g_hProcess, (LPVOID)dwAddr, &dwValue, dwBytes, NULL);
 }
 
 
@@ -431,7 +457,7 @@ void CMemoryModifyerDlg::OnEnChangeEdit4()
 	CString editstr;
 	editbytes.GetWindowText(editstr);
 	DWORD dwValue = _tcstoul(editstr, NULL, 10);//把字符转成10位整数
-	if (dwValue != 1 && dwValue != 2 && dwValue != 4) {
+	if (dwValue != 1 && dwValue != 4) {
 		CString contentstr;
 		editcontent.GetWindowText(contentstr);
 		DWORD contentValue = _tcstoul(contentstr, NULL, 10);//把字符转成10位整数
